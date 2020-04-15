@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Isometric Canvas</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body onload="startGame()">
+    <div id="wrapper">
+        <canvas id="world" width="2160" height="1440"></canvas>
+        <canvas id="gridTest" width="2160" height="1440"></canvas>
+        <canvas id='isoBackground' width="2160" height="1440"></canvas>
+    </div>
+    <!--<script src="http://localhost:2992/webpack-dev-server.js"></script>-->
+
+    <!-- Isomer build -->
+    <script src="./isomer/dist/isomer.js"></script>
+
+    <!-- Test script -->
+    <script src="games.js"></script>
+
+</html>

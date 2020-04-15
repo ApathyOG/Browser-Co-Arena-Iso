@@ -1,0 +1,34 @@
+#world {
+  position: absolute;
+  width: 1080px;
+  height: 720px;
+  margin: 0 auto;
+  z-index: 2;
+  pointer-events: none;
+}
+#gridTest{
+  position: absolute;
+  width: 1080px;
+  height: 720px;
+  margin: 0 auto;
+  z-index: 1;
+  pointer-events: none;
+}
+#isoBackground {
+  vertical-align: middle;
+  position: absolute;
+  width: 1080px;
+  height: 720px;
+  margin: 0 auto;
+  background-color: floralwhite;
+  z-index: 0;
+}
+#wrapper {
+  vertical-align: middle;
+}
+
+
+
+body {
+  overflow: hidden;
+}
