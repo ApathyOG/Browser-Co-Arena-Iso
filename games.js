@@ -267,8 +267,8 @@ function handleWorldRightClick(event) {
 }
 function handleWorldClick(event) {
   if (keysPressed['control']) {
-    charX = (event.clientX - canvasRect.left) / 60;
-    charY = (event.clientY - canvasRect.top) / 60;
+    charCurrentX= Math.floor((event.clientX - canvasRect.left) / 90);
+    charCurrentY = Math.floor((event.clientY - canvasRect.top) / 90);
     //WORK HERE MORE MIGHT BE A SOLUTION
   }
 }
