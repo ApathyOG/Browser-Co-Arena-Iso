@@ -9,10 +9,18 @@
 
 <body onload="startGame()">
     <div id="wrapper">
-        <canvas id="world" width="2160" height="1440"></canvas>
-        <canvas id="effects" width="2160" height="1440"></canvas>
-        <canvas id='background' width="2160" height="1440"></canvas>
-        <canvas id='clickField' width="2160" height="1440"></canvas>
+        <div id="worldWrapper">
+            <canvas id="world" width="2160" height="1440"></canvas>
+            <canvas id="effects" width="2160" height="1440"></canvas>
+            <canvas id='background' width="2160" height="1440"></canvas>
+            <canvas id='clickField' width="2160" height="1440"></canvas>
+        </div>
+        <div id="sidebar">
+            <div id="fpsCounter">
+                <h1 id="fps"></h1>
+            </div>
+
+        </div>
     </div>
     <!--<script src="http://localhost:2992/webpack-dev-server.js"></script>-->
 
