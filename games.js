@@ -5,7 +5,7 @@ var Shape = Isomer.Shape;
 var Color = Isomer.Color;
 var Vector = Isomer.Vector;
 //Init Consts-------------------------------------------
-
+const CANVASWRAPPER = document.getElementById('wrapper');
 const CLICKFIELD = document.getElementById('clickField');
 const BACKGROUND = document.getElementById('background');
 const MIDDLEGROUND = document.getElementById('effects');
@@ -71,8 +71,8 @@ function startGame() {
   window.addEventListener('keydown', throttle(handleKeyDown, 100));
   //CLICKFIELD.addEventListener('click', handleWorldClick);
   //CLICKFIELD.addEventListener('contextmenu', handleWorldRightClick);
-  window.addEventListener('click', handleWorldClick);
-  window.addEventListener('contextmenu', handleWorldRightClick);
+  CANVASWRAPPER.addEventListener('click', handleWorldClick);
+  CANVASWRAPPER.addEventListener('contextmenu', handleWorldRightClick);
   makeCells(21, 21, 0, clickField);
   makeGrid(30, 30, -8, new Color(111, 111, 111, 1), background);
  
@@ -210,12 +210,17 @@ function handleWorldClick(event) {
       var coords = Object.entries(cells[hex]);
       charCurrentX = coords[0][1];
       charCurrentY = coords[1][1];
+      var oldPoint = new Point(charLastX,charLastY,0);
+      var newPoint = new Point(charCurrentX,charCurrentY,0);
+      var distance  = new Point().distance(oldPoint,newPoint);
+      console.log(distance);
         //find distance between two points and make the Z increase a multiple of the distance
         //  instead  of from last x to current x, use last clickX to currentcllickX;
         //
         //
         //
         ///this right HERE
+        
     }
   } else {
     if (hex.toString() in cells) {
