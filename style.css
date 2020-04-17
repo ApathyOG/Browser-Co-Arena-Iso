@@ -3,24 +3,33 @@
   width: 1080px;
   height: 720px;
   margin: 0 auto;
-  z-index: 2;
+  z-index: 3;
   pointer-events: none;
 }
-#gridTest{
+#effects{
   position: absolute;
   width: 1080px;
   height: 720px;
   margin: 0 auto;
-  z-index: 1;
+  z-index: 2;
   pointer-events: none;
 }
-#isoBackground {
+#background {
   vertical-align: middle;
   position: absolute;
   width: 1080px;
   height: 720px;
   margin: 0 auto;
-  background-color: floralwhite;
+  background-color: white;
+  z-index: 1;
+}
+#clickField{
+  vertical-align: middle;
+  position: absolute;
+  width: 1080px;
+  height: 720px;
+  margin: 0 auto;
+  background-color:white;
   z-index: 0;
 }
 #wrapper {
