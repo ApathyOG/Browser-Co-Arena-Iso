@@ -5,7 +5,7 @@ var Shape = Isomer.Shape;
 var Color = Isomer.Color;
 var Vector = Isomer.Vector;
 //Init Consts-------------------------------------------
-const CANVASWRAPPER = document.getElementById('wrapper');
+const CANVASWRAPPER = document.getElementById('worldWrapper');
 const CLICKFIELD = document.getElementById('clickField');
 const BACKGROUND = document.getElementById('background');
 const MIDDLEGROUND = document.getElementById('effects');
@@ -48,7 +48,9 @@ var objectsOnScreen = {}; //objects to be drawn on screen , draw index decided b
 var lastCall = 0; //for throttle function
 //----Character vars-----------------------------------\/
 var charColor = new Color(20, 20, 20);
+var shadowColor = new Color(0,0,0,0.2);
 var jumping = false;
+var crtlJumping = false;
 var jumpCounter = 0;
 var jumpIncreaseZ = Math.PI / 100;
 var charX = 0;
@@ -73,10 +75,11 @@ function startGame() {
   //CLICKFIELD.addEventListener('contextmenu', handleWorldRightClick);
   CANVASWRAPPER.addEventListener('click', handleWorldClick);
   CANVASWRAPPER.addEventListener('contextmenu', handleWorldRightClick);
-  makeCells(21, 21, 0, clickField);
-  makeGrid(30, 30, -8, new Color(111, 111, 111, 1), background);
+  makeClickCells(21, 21, 0, clickField);
+  makeCells(21,21,0,new Color(150,150,150),background)
+  makeGrid(21, 21, 0, new Color(111, 111, 111, 1), background);
  
-  //makeGrid(16, 16, 0, new Color(10, 10, 10, 1), background);  
+  //makeGrid(16, 16, 8, new Color(10, 10, 10, 1), background);  
 
   requestAnimationFrame(gameLoop);
   window.setInterval(clearEffects, 3000);
@@ -159,11 +162,19 @@ function update(delta) {
 function drawForeground() {
   iso.canvas.clear();
   //shadow
-  iso.add(Shape.Prism(new Point(charX, charY, 0), 1, 1, 0), charColor, false);
+  iso.add(Shape.Prism(new Point(charX, charY, 0), 1, 1, 0), shadowColor, false);
   if(jumping){
-    iso.add(Shape.Prism(new Point(charX, charY, Math.sin(jumpCounter)), 1, 1, 2), charColor, true);
-    jumpCounter += jumpIncreaseZ
-    if(charX === charCurrentX){
+    iso.add(Shape.Prism(new Point(charX, charY, charZ), 1, 1, 2), charColor, true);
+    
+    jumpCounter += jumpIncreaseZ;
+    if(charCurrentZ === charLastZ && charCurrentX === charLastX && charCurrentY === charLastY){
+      jumping = false;
+    }
+  }else if(crtlJumping){
+    iso.add(Shape.Prism(new Point(charX, charY, charZ), 1, 1, 2), charColor, true);
+    var distance = Math.sqrt(Math.pow(charCurrentX-charLastX) + Math.pow(charCurrentY-charLastY));
+    jumpCounter += jumpIncreaseZ ;//distance  + 0.5; //*distance
+    if(charCurrentZ === charLastZ && charCurrentX === charLastX && charCurrentY === charLastY){
       jumping = false;
     }
   }else{
@@ -206,14 +217,17 @@ function handleWorldClick(event) {
   let hex = sampleBackground(pixelData);
   if (keysPressed['control']) {
     if (hex.toString() in cells) {
-      jumping = true;
       var coords = Object.entries(cells[hex]);
       charCurrentX = coords[0][1];
       charCurrentY = coords[1][1];
-      var oldPoint = new Point(charLastX,charLastY,0);
-      var newPoint = new Point(charCurrentX,charCurrentY,0);
-      var distance  = new Point().distance(oldPoint,newPoint);
-      console.log(distance);
+      handleCrtlJump();
+      
+      
+      
+      //var oldPoint = new Point(charLastX,charLastY,0);
+      //var newPoint = new Point(charCurrentX,charCurrentY,0);
+      //var distance  = new Point().distance(oldPoint,newPoint);
+      //console.log(distance);
         //find distance between two points and make the Z increase a multiple of the distance
         //  instead  of from last x to current x, use last clickX to currentcllickX;
         //
@@ -230,6 +244,7 @@ function handleWorldClick(event) {
 
     }
   }
+  console.log(`you moved to x:${charCurrentX} y:${charCurrentY} z:${charCurrentZ} `);
 }
 function handleKeyDown(event) {
   //  console.log(`you pressed the "${event.key}" key`);
@@ -253,15 +268,24 @@ function handleKeyUp(event) {
 function handleOtherKeys(key) {
   console.log(`you didnt press an "action" key`);
 }
+function handleCrtlJump(){
+  jumping = true;
+  charCurrentZ +=3;
+  window.setTimeout(unCrtlJump, 500);
+}
+function unCrtlJump(){
+  charCurrentZ -= 3;
+  jumping = false;
+}
 function handleJump() {
   jumping = true;
   charCurrentZ++;
   window.setTimeout(unJump, 500);
-  jumping = false;
 }
 function unJump() {
   console.log("unjumped");
   charCurrentZ--;
+  //jumping = false;
 }
 //--Event Handlers ---------------------------------------------------------/\
 
@@ -308,20 +332,38 @@ function HSVtoRGB(h, s, v) {
     b: Math.round(b * 255)
   };
 }
-function makeCells(xSize, ySize, zHeight, isoCanvas) {
-  let counter = 0;
+function makeClickCells(xSize, ySize, zHeight, isoCanvas) { 
   for (y = -8; y < ySize + 1; y++) {
     for (x = -8; x < xSize + 1; x++) {
       let color = randomColor();
       isoCanvas.add(Shape.Prism(new Point(x, y, zHeight), 1, 1, 0), color, false);
       //console.log(color.toHex());
       cells[color.toHex()] = { x: x, y: y };
-      counter++;
     }
   }
   //console.log(JSON.stringify(cells));
 }
-
+function makeCells(xSize, ySize, zHeight,color, isoCanvas) {
+  let counter = 0;
+  for (y = -8; y < ySize + 1; y++) {
+    for (x = -8; x < xSize + 1; x++) {
+      
+      isoCanvas.add(Shape.Prism(new Point(x, y, zHeight), 1, 1, 0), color, false);
+      //console.log(color.toHex());
+      cells[color.toHex()] = { x: x, y: y };
+      counter++;
+    }
+  }//console.log(JSON.stringify(cells));
+}
+function discoBomb(xSize, ySize, zHeight,isoCanvas){
+  for (y = -8; y < ySize + 1; y++) {
+    for (x = -8; x < xSize + 1; x++) {
+      
+      isoCanvas.add(Shape.Prism(new Point(x, y, zHeight), 1, 1, 0), randomColor, false);
+      
+    }
+  }
+}
 function castRay(x,y){
   effects.add(new Path([
     new Point(x, 0, zHeight),
@@ -331,20 +373,35 @@ function castRay(x,y){
 }
 
 function makeGrid(xSize, ySize, zHeight, gridColor, isoCanvas) {
-  for (x = 0; x < xSize + 1; x++) {
+  for (x = -8; x < xSize + 2; x++) {
+    isoCanvas.add(new Path([
+      new Point(x, -8, zHeight),
+      new Point(x, xSize+1, zHeight),
+      new Point(x, -8, zHeight)
+    ]), gridColor, false);
+  }
+  for (y = -8; y < ySize +2; y++) {
+    isoCanvas.add(new Path([
+      new Point(-8, y, zHeight),
+      new Point(ySize+1, y, zHeight),
+      new Point(-8, y, zHeight)
+    ]), gridColor, false);
+  }
+
+  /* for (x = -8; x < xSize + 1; x++) {
     isoCanvas.add(new Path([
       new Point(x, 0, zHeight),
       new Point(x, xSize, zHeight),
       new Point(x, 0, zHeight)
     ]), gridColor, false);
   }
-  for (y = 0; y < ySize + 1; y++) {
+  for (y = -8; y < ySize + 1; y++) {
     isoCanvas.add(new Path([
       new Point(0, y, zHeight),
       new Point(ySize, y, zHeight),
       new Point(0, y, zHeight)
     ]), gridColor, false);
-  }
+  }*/
 }
 function rgbToHex(r, g, b) {
   if (r > 255 || g > 255 || b > 255)
