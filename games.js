@@ -48,6 +48,9 @@ var objectsOnScreen = {}; //objects to be drawn on screen , draw index decided b
 var lastCall = 0; //for throttle function
 //----Character vars-----------------------------------\/
 var charColor = new Color(20, 20, 20);
+var jumping = false;
+var jumpCounter = 0;
+var jumpIncreaseZ = Math.PI / 100;
 var charX = 0;
 var charY = 0;
 var charZ = 0;
@@ -155,9 +158,19 @@ function update(delta) {
 }
 function drawForeground() {
   iso.canvas.clear();
-  //iso.add(Shape.Cylinder(new Point(charX,charY, 0), 1, 1, 1), charColor,false);
+  //shadow
   iso.add(Shape.Prism(new Point(charX, charY, 0), 1, 1, 0), charColor, false);
-  iso.add(Shape.Prism(new Point(charX, charY, charZ), 1, 1, 2), charColor, true);
+  if(jumping){
+    iso.add(Shape.Prism(new Point(charX, charY, Math.sin(jumpCounter)), 1, 1, 2), charColor, true);
+    jumpCounter += jumpIncreaseZ
+    if(charX === charCurrentX){
+      jumping = false;
+    }
+  }else{
+    iso.add(Shape.Prism(new Point(charX, charY, charZ), 1, 1, 2), charColor, true);
+    
+  }
+  
 
 }
 function clearEffects() {
@@ -192,8 +205,18 @@ function handleWorldClick(event) {
   let pixelData = clickFieldCTX.getImageData(xx * 2, yy * 2, 1, 1).data;
   let hex = sampleBackground(pixelData);
   if (keysPressed['control']) {
-    charCurrentX = 0;
-    charCurrentY = 0;
+    if (hex.toString() in cells) {
+      jumping = true;
+      var coords = Object.entries(cells[hex]);
+      charCurrentX = coords[0][1];
+      charCurrentY = coords[1][1];
+        //find distance between two points and make the Z increase a multiple of the distance
+        //  instead  of from last x to current x, use last clickX to currentcllickX;
+        //
+        //
+        //
+        ///this right HERE
+    }
   } else {
     if (hex.toString() in cells) {
       var coords = Object.entries(cells[hex]);
@@ -226,8 +249,10 @@ function handleOtherKeys(key) {
   console.log(`you didnt press an "action" key`);
 }
 function handleJump() {
+  jumping = true;
   charCurrentZ++;
   window.setTimeout(unJump, 500);
+  jumping = false;
 }
 function unJump() {
   console.log("unjumped");
