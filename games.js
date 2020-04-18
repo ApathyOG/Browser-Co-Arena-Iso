@@ -20,6 +20,7 @@ const BOUNDHEIGHT = PLAYERHEIGHT / 2;
 const VALIDWIDTH = WORLDWIDTH - BOUNDWIDTH;
 const VALIDHEIGHT = WORLDHEIGHT - BOUNDHEIGHT;
 //init Lets---------------------------------------------
+let fps =0;
 let speed = DEFAULTSPEED;
 let diagonalSpeed = DEFAULTSPEED / 2;
 let rotate = 0;
@@ -27,28 +28,31 @@ let keysPressed = {};
 //Init varsS--------------------------------------------
 //----canvas'-----------------------------------------\/
 var clickField = new Isomer(CLICKFIELD);
-var clickFieldCTX = CLICKFIELD.getContext('2d');
+var clickFieldCTX = CLICKFIELD.getContext('2d', {alpha : false});
 var clickFieldCanvasRect = CLICKFIELD.getBoundingClientRect();
 
 //--------
 var background = new Isomer(BACKGROUND);
-var backgroundCTX = BACKGROUND.getContext('2d');
+var backgroundCTX = BACKGROUND.getContext('2d', {alpha : false});
 //---------
 var effects = new Isomer(MIDDLEGROUND);
 var effectsCTX = MIDDLEGROUND.getContext('2d');
 //---------
 var iso = new Isomer(FOREGROUND);
-var isoCTX = FOREGROUND.getContext('2d');
+var isoCTX = FOREGROUND.getContext('2d',{alpha : false});
 
 //----canvas'-----------------------------------------/\
 //var charX, charY, charZ, charLastX, charLastY, charLastZ, charCurrentX, charCurrentY, charCurrentZ, lastCall = 0;
 var cells = {}; //holds a list of the x, y and color value of each cell to detect clicks
-var lastFrameTimeMs = 0; //time since last frame run by browser
-var objectsOnScreen = {}; //objects to be drawn on screen , draw index decided by position
+var lastFrameTimeMs = 0; //time since last frame run by browser/
+var backgroundObjects = {}; //objects to be drawn on screen , draw index decided by position
+var foreGroundObjects = {};
+var effectsObjects = {};
 var lastCall = 0; //for throttle function
 //----Character vars-----------------------------------\/
+var wallColor = new Color(0,0,0);
 var charColor = new Color(20, 20, 20);
-var shadowColor = new Color(0,0,0,0.2);
+var shadowColor = new Color(0,0,0,0.05);
 var jumping = false;
 var crtlJumping = false;
 var jumpCounter = 0;
@@ -75,10 +79,22 @@ function startGame() {
   //CLICKFIELD.addEventListener('contextmenu', handleWorldRightClick);
   CANVASWRAPPER.addEventListener('click', handleWorldClick);
   CANVASWRAPPER.addEventListener('contextmenu', handleWorldRightClick);
-  makeClickCells(21, 21, 0, clickField);
-  makeCells(21,21,0,new Color(150,150,150),background)
-  makeGrid(21, 21, 0, new Color(111, 111, 111, 1), background);
- 
+  backgroundObjects['background'] = function(){
+    makeCell(22,22,0,new Color(150,150,150),background)
+    makeGrid(21, 21, 0, new Color(111, 111, 111, 1), background);
+    background.add(Shape.Prism(new Point(0,0,charZ), 1, 1, 0), shadowColor, false);
+  }
+  backgroundObjects['walls'] = function(){
+    background.add(Shape.Prism(new Point(22 + charX, charY, charZ), 1, 23, 4), wallColor, true);
+    background.add(Shape.Prism(new Point( charX, 22+ charY, charZ), 5, 1, 4), wallColor, true);
+    background.add(Shape.Prism(new Point( 12 +charX, 22 + charY, charZ), 10, 1, 4), wallColor, true);
+  }
+  makeClickCells(32, 32, 0, clickField);
+  for (let [key, value] of Object.entries(backgroundObjects)) {
+    value();
+  }
+  
+  iso.add(Shape.Prism(new Point(0, 0, 0), 1, 1, 2), charColor, true);
   //makeGrid(16, 16, 8, new Color(10, 10, 10, 1), background);  
 
   requestAnimationFrame(gameLoop);
@@ -93,11 +109,30 @@ function gameLoop(timestamp) {
   delta = timestamp - lastFrameTimeMs;
   lastFrameTimeMs = timestamp;
   update(delta);
-  drawForeground();
+  if(changeInForeGround()){
+    drawForeground();
+  }
+  if(changeInBackground()){
+    drawBackground();
+  }
+  fps =1000/delta;
   requestAnimationFrame(gameLoop);
 }
 function update(delta) {
-  if (charLastX !== charCurrentX) {
+  if(jumping){    
+    jumpCounter += jumpIncreaseZ;
+    if(charCurrentZ === charLastZ && charCurrentX === charLastX && charCurrentY === charLastY){
+      jumping = false;
+    }
+  }else if(crtlJumping){
+    //var distance = Math.sqrt(Math.pow(charCurrentX-charLastX) + Math.pow(charCurrentY-charLastY));
+    jumpCounter += jumpIncreaseZ ;//distance  + 0.5; //*distance
+    if(charCurrentZ === charLastZ && charCurrentX === charLastX && charCurrentY === charLastY){
+      crtlJumping = false;
+    }
+  }
+
+ if (charLastX !== charCurrentX) {
     if (charLastX < charCurrentX) {
       if ((charLastX + speed * delta) < charCurrentX) {
         charX += speed * delta;
@@ -105,6 +140,7 @@ function update(delta) {
       } else {
         charX = charCurrentX;
         charLastX = charCurrentX;
+        drawBackground(); 
       }
     }
     if (charLastX > charCurrentX) {
@@ -114,6 +150,7 @@ function update(delta) {
       } else {
         charX = charCurrentX;
         charLastX = charCurrentX;
+        drawBackground();
       }
     }
 
@@ -126,6 +163,7 @@ function update(delta) {
       } else {
         charY = charCurrentY;
         charLastY = charCurrentY;
+        drawBackground();
       }
     }
     if (charLastY > charCurrentY) {
@@ -135,6 +173,7 @@ function update(delta) {
       } else {
         charY = charCurrentY;
         charLastY = charCurrentY;
+        drawBackground();
       }
     }
   }
@@ -146,6 +185,7 @@ function update(delta) {
       } else {
         charZ = charCurrentZ;
         charLastZ = charCurrentZ;
+        drawBackground();
       }
     }
     if (charLastZ > charCurrentZ) {
@@ -155,34 +195,22 @@ function update(delta) {
       } else {
         charZ = charCurrentZ;
         charLastZ = charCurrentZ;
+        drawBackground();
       }
     }
   }
 }
-function drawForeground() {
+function drawBackground(){
+  background.canvas.clear();
+  for (let [key, value] of Object.entries(backgroundObjects)) {
+    value();
+  }  
+}
+function drawForeground() {  
   iso.canvas.clear();
-  //shadow
-  iso.add(Shape.Prism(new Point(charX, charY, 0), 1, 1, 0), shadowColor, false);
-  if(jumping){
-    iso.add(Shape.Prism(new Point(charX, charY, charZ), 1, 1, 2), charColor, true);
-    
-    jumpCounter += jumpIncreaseZ;
-    if(charCurrentZ === charLastZ && charCurrentX === charLastX && charCurrentY === charLastY){
-      jumping = false;
-    }
-  }else if(crtlJumping){
-    iso.add(Shape.Prism(new Point(charX, charY, charZ), 1, 1, 2), charColor, true);
-    var distance = Math.sqrt(Math.pow(charCurrentX-charLastX) + Math.pow(charCurrentY-charLastY));
-    jumpCounter += jumpIncreaseZ ;//distance  + 0.5; //*distance
-    if(charCurrentZ === charLastZ && charCurrentX === charLastX && charCurrentY === charLastY){
-      jumping = false;
-    }
-  }else{
-    iso.add(Shape.Prism(new Point(charX, charY, charZ), 1, 1, 2), charColor, true);
-    
-  }
-  
-
+  for (let [key, value] of Object.entries(foreGroundObjects)) {
+    value();
+  }  
 }
 function clearEffects() {
   effects.canvas.clear();
@@ -200,7 +228,7 @@ function handleWorldRightClick(event) {
 
   effectsCTX.beginPath();
   //------------------1080,1440
-  effectsCTX.moveTo(lastClickX, lastClickY);
+  effectsCTX.moveTo(1080, 700);
   effectsCTX.lineTo(xx * 2, yy * 2);
   effectsCTX.lineWidth = 10;
   effectsCTX.stroke();
@@ -215,11 +243,27 @@ function handleWorldClick(event) {
   lastClickY = yy *2;
   let pixelData = clickFieldCTX.getImageData(xx * 2, yy * 2, 1, 1).data;
   let hex = sampleBackground(pixelData);
-  if (keysPressed['control']) {
+  if (keysPressed['control'] && crtlJumping === false) {
     if (hex.toString() in cells) {
       var coords = Object.entries(cells[hex]);
-      charCurrentX = coords[0][1];
-      charCurrentY = coords[1][1];
+      var xCoord = coords[0][1];
+      var yCoord = coords[1][1];
+      //charCurrentX = (coords[0][1]) * -1;
+      //charCurrentY = (coords[1][1]) * -1;
+      if(xCoord !== 0 ){        
+        if(Math.sign(xCoord) === -1){
+          charCurrentX += Math.abs(xCoord);
+        }else{
+          charCurrentX -= Math.abs(xCoord);
+        }
+      }
+      if(yCoord !== 0 ){        
+        if(Math.sign(yCoord) === -1){
+          charCurrentY += Math.abs(yCoord);
+        }else{
+          charCurrentY -= Math.abs(yCoord);
+        }
+      }
       handleCrtlJump();
       
       
@@ -236,11 +280,26 @@ function handleWorldClick(event) {
         ///this right HERE
         
     }
-  } else {
+  } else if(!jumping && !crtlJumping) {
     if (hex.toString() in cells) {
       var coords = Object.entries(cells[hex]);
-      charCurrentX = coords[0][1];
-      charCurrentY = coords[1][1];
+      var xCoord = coords[0][1];
+      var yCoord = coords[1][1];
+      if(xCoord !== 0 ){        
+        if(Math.sign(xCoord) === -1){
+          charCurrentX += Math.abs(xCoord);
+        }else{
+          charCurrentX -= Math.abs(xCoord);
+        }
+      }
+      if(yCoord !== 0 ){        
+        if(Math.sign(yCoord) === -1){
+          charCurrentY += Math.abs(yCoord);
+        }else{
+          charCurrentY -= Math.abs(yCoord);
+        }
+      }
+     
 
     }
   }
@@ -269,27 +328,40 @@ function handleOtherKeys(key) {
   console.log(`you didnt press an "action" key`);
 }
 function handleCrtlJump(){
-  jumping = true;
-  charCurrentZ +=3;
+  crtlJumping = true;
+  charCurrentZ -=3;
   window.setTimeout(unCrtlJump, 500);
 }
 function unCrtlJump(){
-  charCurrentZ -= 3;
+  charCurrentZ += 3;
   jumping = false;
 }
 function handleJump() {
   jumping = true;
-  charCurrentZ++;
+  charCurrentZ--;
   window.setTimeout(unJump, 500);
 }
 function unJump() {
   console.log("unjumped");
-  charCurrentZ--;
+  charCurrentZ++;
   //jumping = false;
 }
 //--Event Handlers ---------------------------------------------------------/\
 
 //--Helper Functions ---------------------------------------------------------\/
+function changeInForeGround(){
+
+  return false;
+}
+function changeInBackground(){
+  var oldPosition = new Point(charLastX, charLastY, charLastZ);
+  var currentPosition = new Point(charCurrentX, charCurrentY, charCurrentZ);   
+  if(JSON.stringify(oldPosition) !== JSON.stringify(currentPosition)){
+    console.log('render a frame');
+    return true;
+  }
+  return false;
+}
 function randomColor() {
   let color = new Color(
     parseInt(Math.random() * 256),
@@ -333,27 +405,44 @@ function HSVtoRGB(h, s, v) {
   };
 }
 function makeClickCells(xSize, ySize, zHeight, isoCanvas) { 
-  for (y = -8; y < ySize + 1; y++) {
-    for (x = -8; x < xSize + 1; x++) {
+  for (y = -10; y < ySize + 1; y++) {
+    for (x = -10; x < xSize + 1; x++) {
       let color = randomColor();
-      isoCanvas.add(Shape.Prism(new Point(x, y, zHeight), 1, 1, 0), color, false);
+      isoCanvas.add(Shape.Prism(new Point(x , y, zHeight) , 1, 1, 0), color, false);
       //console.log(color.toHex());
       cells[color.toHex()] = { x: x, y: y };
     }
   }
   //console.log(JSON.stringify(cells));
 }
-function makeCells(xSize, ySize, zHeight,color, isoCanvas) {
+function makeCell(xSize, ySize, zHeight,color, isoCanvas) {
   let counter = 0;
-  for (y = -8; y < ySize + 1; y++) {
-    for (x = -8; x < xSize + 1; x++) {
+  isoCanvas.add(Shape.Prism(new Point(charX, charY, charZ), xSize, ySize, zHeight), color, false);
+ /* for (y = 0; y < ySize + 1; y++) {
+    for (x = 0; x < xSize + 1; x++) {
       
-      isoCanvas.add(Shape.Prism(new Point(x, y, zHeight), 1, 1, 0), color, false);
+      isoCanvas.add(Shape.Prism(new Point(x + charX, y + charY, zHeight + charZ), 1, 1, 0), color, false);
       //console.log(color.toHex());
       cells[color.toHex()] = { x: x, y: y };
       counter++;
     }
-  }//console.log(JSON.stringify(cells));
+  }//console.log(JSON.stringify(cells));*/
+}
+function makeGrid(xSize, ySize, zHeight, gridColor, isoCanvas) {
+  for (x = 0; x < xSize + 2; x++) {
+    isoCanvas.add(new Path([
+      new Point(x + charX, 0 +charY, zHeight + charZ),
+      new Point(x + charX, xSize + 1 + charY, zHeight + charZ),
+      new Point(x + charX, 0 + charY, zHeight + charZ)
+    ]), gridColor, false);
+  }
+  for (y = 0; y < ySize +2; y++) {
+    isoCanvas.add(new Path([
+      new Point(0 + charX, y + charY, zHeight + charZ),
+      new Point(ySize + 1 + charX, y + charY, zHeight + charZ),
+      new Point(0 + charX, y + charY, zHeight + charZ)
+    ]), gridColor, false);
+  }
 }
 function discoBomb(xSize, ySize, zHeight,isoCanvas){
   for (y = -8; y < ySize + 1; y++) {
@@ -370,38 +459,6 @@ function castRay(x,y){
     new Point(x, xSize, zHeight),
     new Point(x, 0, zHeight)
   ]), rayColor, false);
-}
-
-function makeGrid(xSize, ySize, zHeight, gridColor, isoCanvas) {
-  for (x = -8; x < xSize + 2; x++) {
-    isoCanvas.add(new Path([
-      new Point(x, -8, zHeight),
-      new Point(x, xSize+1, zHeight),
-      new Point(x, -8, zHeight)
-    ]), gridColor, false);
-  }
-  for (y = -8; y < ySize +2; y++) {
-    isoCanvas.add(new Path([
-      new Point(-8, y, zHeight),
-      new Point(ySize+1, y, zHeight),
-      new Point(-8, y, zHeight)
-    ]), gridColor, false);
-  }
-
-  /* for (x = -8; x < xSize + 1; x++) {
-    isoCanvas.add(new Path([
-      new Point(x, 0, zHeight),
-      new Point(x, xSize, zHeight),
-      new Point(x, 0, zHeight)
-    ]), gridColor, false);
-  }
-  for (y = -8; y < ySize + 1; y++) {
-    isoCanvas.add(new Path([
-      new Point(0, y, zHeight),
-      new Point(ySize, y, zHeight),
-      new Point(0, y, zHeight)
-    ]), gridColor, false);
-  }*/
 }
 function rgbToHex(r, g, b) {
   if (r > 255 || g > 255 || b > 255)
@@ -430,33 +487,35 @@ function handleMovement(key) {
     case (keysPressed['a'] && keysPressed['d']):
       break;
     case (keysPressed['d'] && keysPressed['s']):
-      charCurrentY--;
-      charCurrentX--;
+      charCurrentY++;
+      charCurrentX++;
       break;
     case (keysPressed['a'] && keysPressed['s']):
-      charCurrentX--;
-      charCurrentY++;
-      break;
-    case (keysPressed['w'] && keysPressed['a']):
-      charCurrentX++;
-      charCurrentY++;
-      break;
-    case (keysPressed['w'] && keysPressed['d']):
       charCurrentX++;
       charCurrentY--;
+      break;
+    case (keysPressed['w'] && keysPressed['a']):
+      charCurrentX--;
+      charCurrentY--;
+      break;
+    case (keysPressed['w'] && keysPressed['d']):
+      charCurrentX--;
+      charCurrentY++;
       break;
     //------------------SINGLE KEYS-------------------------
     case (keysPressed['w'] && singleKey):
-      charCurrentX++;
-      break;
-    case (keysPressed['a'] && singleKey):
-      charCurrentY++;
-      break;
-    case (keysPressed['s'] && singleKey):
       charCurrentX--;
       break;
-    case (keysPressed['d'] && singleKey):
+    case (keysPressed['a'] && singleKey):
       charCurrentY--;
+      break;
+    case (keysPressed['s'] && singleKey):
+      
+      charCurrentX++;
+      break;
+    case (keysPressed['d'] && singleKey):
+      charCurrentY++;
+      
       break;
     default:
       break;
