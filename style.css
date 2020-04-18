@@ -34,6 +34,7 @@
   z-index: 0;
 }
 #worldWrapper {
+  margin: auto;
   vertical-align: middle;
 }
 
