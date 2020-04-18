@@ -1,45 +1,77 @@
 #world {
+  /*display: block;
+  position: absolute;*/
   position: absolute;
+  width: auto;
+  height: auto;
+  z-index: 3;
   width: 1080px;
   height: 720px;
-  margin: 0 auto;
-  z-index: 3;
   pointer-events: none;
 }
 #effects{
-  
   position: absolute;
+  width: auto;
+  height: auto;
+  z-index: 2;
   width: 1080px;
   height: 720px;
-  margin: 0 auto;
-  z-index: 2;
   pointer-events: none;
 }
 #background {
-  vertical-align: middle;
   position: absolute;
+  width: auto;
+  height: auto; 
+  z-index: 1;
   width: 1080px;
   height: 720px;
-  margin: 0 auto;
-  background-color: white;
-  z-index: 1;
+  pointer-events: none;
+  background-color: whitesmoke;
 }
 #clickField{
-  vertical-align: middle;
   position: absolute;
+  width: auto;
+  height: auto;
+  background-color: whitesmoke;
+  z-index: 0;
   width: 1080px;
   height: 720px;
-  margin: 0 auto;
-  background-color:white;
-  z-index: 0;
 }
 #worldWrapper {
-  margin: auto;
-  vertical-align: middle;
+  border: rgb(0, 0, 0);
+  border-style: solid;
+  display: block;
+  margin: 0 auto;
+  width: 1080px;
+  height: 720px;
+  padding-left: 0;
+  padding-right: 0;
+  margin-left: auto;
+  margin-right: auto;
+}
+#sidebarLeft{
+  border: rgb(47, 0, 255);
+  border-style: solid;
+  border-radius: 10px;
+  min-width: 100px;
+  max-width: 200px;
+}
+#sidebarRight{
+  border: rgb(47, 0, 255);
+  border-style: solid;
+  border-radius: 10px;
+  min-width: 100px;
+  max-width: 200px;
 }
 
-
-
+#wrapper{
+  display: flex;
+  flex-flow: row;
+}
+header{
+  text-align: center;
+}
 body {
+  background-color: rgb(59, 11, 3);
   overflow: hidden;
 }
