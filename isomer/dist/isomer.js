@@ -575,7 +575,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  this._calculateTransformation();
 
 	  this.originX = options.originX || this.canvas.width / 2;
-	  this.originY = options.originY || this.canvas.height;
+	  this.originY = options.originY || this.canvas.height /2;
 
 	  /**
 	   * Light source as defined as the angle from
